@@ -1,26 +1,27 @@
-module APB_Interface(Pwrite,Pselx,Penable,Paddr,Pwdata,Pwriteout,Pselxout,Penableout,Paddrout,Pwdataout,Prdata);
+module apb_interface(input pwrite,
+                     input penable,
+                     input [2:0]psel, 
+                     input [31:0]paddr,
+                     input [31:0]pwdata, 
+                     output pwrite_out,
+                     output penable_out,
+                     output [2:0]psel_out,
+                     output [31:0]paddr_out,
+                     output [31:0]pwdata_out,
+                     output reg [31:0]prdata);
+                     
+ 
+assign psel_out = psel;
+assign paddr_out = paddr;                    
+assign pwrite_out = pwrite;
+assign penable_out = penable;
+assign pwdata_out = pwdata;
 
-input Pwrite,Penable;
-input [2:0] Pselx;
-input [31:0] Pwdata,Paddr;
-
-output Pwriteout,Penableout;
-output [2:0] Pselxout;
-output [31:0] Pwdataout,Paddrout;
-output reg [31:0] Prdata;
-
-assign Penableout=Penable;
-assign Pselxout=Pselx;
-assign Pwriteout=Pwrite;
-assign Paddrout=Paddr;
-assign Pwdataout=Pwdata;
-
-always @(*)
- begin
-  if (~Pwrite && Penable)
-   Prdata=($random)%256;
-  else
-   Prdata=0;
- end
-
+always@(*)
+   begin
+   if(!pwrite&&penable)
+      prdata=($random)%256;
+   else
+      prdata=32'h0;
+   end
 endmodule
