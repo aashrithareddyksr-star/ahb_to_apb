@@ -1,87 +1,91 @@
-module AHB_slave_interface(Hclk,Hresetn,Hwrite,Hreadyin,Htrans,Haddr,Hwdata,
-			   Prdata,valid,Haddr1,Haddr2,Hwdata1,Hwdata2,Hrdata,Hwritereg,tempselx,Hresp);
-input Hclk,Hresetn;
-input Hwrite,Hreadyin;
-input [1:0] Htrans;
-input [31:0] Haddr,Hwdata,Prdata;
-output reg valid;
-output reg [31:0] Haddr1,Haddr2,Hwdata1,Hwdata2;
-output [31:0] Hrdata; 
-output reg Hwritereg;
-output reg [2:0] tempselx;
-output  [1:0] Hresp;
+module ahb_slave_interface(input hclk,
+                           input hresetn,
+                           input hwrite,
+                           input hreadyin, 
+                           input [31:0] hwdata,
+                           input [31:0] haddr,
+                           input [31:0] prdata,
+                           input [1:0]htrans,
+                           output wire [31:0] hrdata,
+                           output reg [31:0] haddr1,
+                           output reg [31:0] haddr2,
+                           output reg [31:0] hwdata1,
+                           output reg [31:0] hwdata2,
+                           output reg hwrite_reg,
+                           output reg hwrite_reg1,
+                           output reg valid,
+                           output reg [2:0] temp_selx);
+ 
+//generating valid signal
+always@(*) 
+   begin
+      valid=0;
+      if(hreadyin==1 && haddr>=32'h80000000 && haddr<32'h8c000000 && (htrans==2'b10||htrans==2'b11))
+         valid=1; 
+      else
+         valid=0; 
+   end
 
-
-
-/// Implementing Pipeline Logic for Address,Data and Control Signal
-
-	always @(posedge Hclk)
-		begin
-		
-			if (~Hresetn)
-				begin
-					Haddr1<=0;
-					Haddr2<=0;
-				end
-			else
-				begin
-					Haddr1<=Haddr;
-					Haddr2<=Haddr1;
-				end
-		
-		end
-
-	always @(posedge Hclk)
-		begin
-		
-			if (~Hresetn)
-				begin
-					Hwdata1<=0;
-					Hwdata2<=0;
-				end
-			else
-				begin
-					Hwdata1<=Hwdata;
-					Hwdata2<=Hwdata1;
-				end
-		
-		end
-		
-	always @(posedge Hclk)
-		begin	
-			if (~Hresetn)
-				Hwritereg<=0;
-			else
-				Hwritereg<=Hwrite;
-		end
-		
-		
-/// Implementing Valid Logic Generation
-
-	always @(Hreadyin,Haddr,Htrans,Hresetn)
-		begin
-			valid=0;
-			if (Hresetn && Hreadyin && (Haddr>=32'h8000_0000 && Haddr<32'h8C00_0000) && (Htrans==2'b10 || Htrans==2'b11) )
-				valid=1;
-
-		end
-		
-/// Implementing Tempselx Logic
-
-	always @(Haddr,Hresetn)
-		begin
-			tempselx=3'b000;
-			if (Hresetn && Haddr>=32'h8000_0000 && Haddr<32'h8400_0000)
-				tempselx=3'b001;
-			else if (Hresetn && Haddr>=32'h8400_0000 && Haddr<32'h8800_0000)
-				tempselx=3'b010;
-			else if (Hresetn && Haddr>=32'h8800_0000 && Haddr<32'h8C00_0000)
-				tempselx=3'b100;
-
-		end
-	
-
-assign Hrdata = Prdata;
-assign Hresp=2'b00;
+//generating temp_selx signal
+always@(*)
+   begin
+      temp_selx=0;
+      if(haddr>=32'h80000000 && haddr<32'h84000000) 
+         temp_selx=3'b001;
+      else if(haddr>=32'h84000000 && haddr<32'h88000000) 
+         temp_selx=3'b010;
+      else if(haddr>=32'h88000000 && haddr<32'h8c000000) 
+         temp_selx=3'b100;
+      else
+         temp_selx=0;
+    end
+                                 
+//piplining haddr
+always@(posedge hclk)
+   begin 
+      if(!hresetn)
+         begin
+            haddr1<=0;
+            haddr2<=0;
+         end 
+      else 
+         begin
+            haddr1 <=haddr;
+            haddr2<=haddr1;
+         end 
+   end
+   
+//piplining Hwdata
+always@(posedge hclk)
+   begin 
+      if(!hresetn)
+         begin
+            hwdata1 <=0;
+            hwdata2<=0;
+         end 
+      else 
+         begin
+            hwdata1 <=hwdata;
+            hwdata2<=hwdata1;
+         end 
+   end
+   
+//pipelining hwrite_reg
+always@(posedge hclk)
+   begin 
+      if(!hresetn)
+         begin
+            hwrite_reg<=0;
+            hwrite_reg1 <=0;
+         end 
+      else 
+         begin
+            hwrite_reg<=hwrite;
+            hwrite_reg1 <=hwrite_reg;
+         end 
+   end
+   
+//Hrdata
+assign hrdata=prdata; 
 
 endmodule
